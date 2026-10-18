@@ -1,0 +1,24 @@
+# Klarspråk – self-hosted. Fill in the values below, then run:
+#   docker compose up -d
+# The site answers on port 8787; put it behind your own reverse proxy for HTTPS.
+services:
+  klarsprak:
+    image: docker.io/driftaegis/klarsprak:1
+    restart: unless-stopped
+    ports:
+      - "8787:8787"
+    environment:
+      # Host name the site is served on (used in links, sitemap and Turnstile check).
+      PUBLIC_HOST: "klarsprak.example.com"
+      # Long random string. The review queue at /admin asks for it (Bearer token).
+      ADMIN_TOKEN: "change-me-to-a-long-random-string"
+      # Cloudflare Turnstile keys for the suggestion form (https://dash.cloudflare.com → Turnstile).
+      TURNSTILE_SITE_KEY: "your-turnstile-site-key"
+      TURNSTILE_SECRET: "your-turnstile-secret-key"
+      # Optional: separate key for hashing visitor IPs in the rate limit (defaults to ADMIN_TOKEN).
+      RATE_LIMIT_KEY: ""
+    volumes:
+      - klarsprak-data:/data # the D1 (SQLite) database
+
+volumes:
+  klarsprak-data:

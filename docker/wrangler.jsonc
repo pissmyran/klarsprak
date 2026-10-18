@@ -1,0 +1,19 @@
+// Container config: same Worker, no Cloudflare account, routes or ids.
+{
+  "name": "klarsprak",
+  "main": "src/index.js",
+  "compatibility_date": "2026-07-01",
+  "assets": {
+    "directory": "public",
+    "binding": "ASSETS",
+    "run_worker_first": true
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "klarsprak",
+      "database_id": "local",
+      "migrations_dir": "migrations"
+    }
+  ]
+}

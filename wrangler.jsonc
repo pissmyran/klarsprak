@@ -1,0 +1,48 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "klarsprak",
+  "main": "src/index.js",
+  "compatibility_date": "2026-07-01",
+  "workers_dev": false,
+  "preview_urls": false,
+  "upload_source_maps": true,
+  "vars": { "TURNSTILE_HOSTNAMES": "__TURNSTILE_HOSTNAMES__" },
+  "routes": [
+    { "pattern": "__PUBLIC_HOST__", "custom_domain": true },
+    { "pattern": "__ALIAS_HOST__", "custom_domain": true }
+  ],
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    // Static Assets är annars asset-first. Utan detta kan t.ex. / och
+    // /varfor.html serveras direkt utan att worker.js körs, vilket skulle
+    // kringgå host-redirecten för IDN-aliaset. Worker-koden skickar sedan
+    // vanliga anrop vidare till ASSETS.
+    "run_worker_first": true
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "__D1_DATABASE_NAME__",
+      "database_id": "__D1_DATABASE_ID__"
+    }
+  ],
+  "observability": {
+    "enabled": true,
+    "redact_query_string": true,
+    "logs": {
+      "enabled": true,
+      "head_sampling_rate": 1,
+      "invocation_logs": true,
+      "persist": true
+    },
+    "traces": {
+      "enabled": true,
+      "head_sampling_rate": 0.01,
+      "persist": true
+    },
+    "issues": {
+      "enabled": true
+    }
+  }
+}
