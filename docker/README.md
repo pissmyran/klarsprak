@@ -74,6 +74,9 @@ Containern talar vanlig HTTP på port 8787. Lägg den bakom en omvänd proxy som
 
 ## Changelog
 
+**1.1.2**
+- `tools/render.mjs` skriver varje ifylld fil i en loop tills alla byte är skrivna, så att en kort skrivning inte kan lämna en avkortad fil.
+
 **1.1.1**
 - `tools/render.mjs` läser och skriver varje fil genom samma filbeskrivare, så att filen inte kan bytas ut mellan kontroll och skrivning.
 
