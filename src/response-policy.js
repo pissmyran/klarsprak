@@ -23,9 +23,15 @@ function contentSecurityPolicy(nonce) {
   ].join("; ");
 }
 
-export function applyResponsePolicy(response, { noStore = false, robots = null } = {}) {
+export function newNonce() {
+  return crypto.randomUUID().replaceAll("-", "");
+}
+
+export function applyResponsePolicy(
+  response,
+  { noStore = false, robots = null, nonce = newNonce() } = {},
+) {
   const result = new Response(response.body, response);
-  const nonce = crypto.randomUUID().replaceAll("-", "");
   result.headers.set("content-security-policy", contentSecurityPolicy(nonce));
   for (const [name, value] of Object.entries(COMMON_HEADERS)) {
     result.headers.set(name, value);

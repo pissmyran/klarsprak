@@ -57,3 +57,8 @@ test("applyResponsePolicy preserves cache policy for public responses", () => {
   assert.equal(response.headers.get("cache-control"), "public, max-age=60");
   assert.equal(response.headers.get("pragma"), null);
 });
+
+test("applyResponsePolicy puts a given nonce in the CSP", () => {
+  const response = applyResponsePolicy(new Response(null), { nonce: "abc123" });
+  assert.match(response.headers.get("content-security-policy"), /'nonce-abc123'/);
+});
