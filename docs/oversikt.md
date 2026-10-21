@@ -48,7 +48,3 @@ Adminflödet läser granskningskö och utför explicita stateövergångar för r
 - D1-schema/publiceringsstate → migration + [project-context.md](project-context.md)
 - submission/review/admin → architecture + säkerhetsrelevant verifiering
 - Wrangler bindings/domains → project-context + operations
-
-## Wiki
-
-

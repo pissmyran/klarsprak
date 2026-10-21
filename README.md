@@ -1,5 +1,7 @@
 # Klarspråk
 
+**Dokumentation:** [vinedrinker.github.io/klarsprak](https://vinedrinker.github.io/klarsprak/) – start, dokumentation och Docker på en sida med sök.
+
 Klarspråk är en Cloudflare Worker-baserad webbplats som jämför dokumenterad allmänspråklig betydelse med dokumenterad myndighets- och rättsanvändning av samma uttryck. Publika termer lagras i D1 och publiceras först efter granskning.
 
 ## Snabbstart
@@ -18,7 +20,7 @@ npm run dev
 
 ## Dokumentation
 
-Börja i **[dokumentationsöversikten](docs/index.md)**.
+Börja i **[dokumentationsöversikten](docs/oversikt.md)**.
 
 - [Projektkontext](docs/project-context.md) — runtime, publiceringsmodell och state
 - [Arkitektur](docs/architecture.md) — Worker/assets/D1, requestflöden och trust boundaries
