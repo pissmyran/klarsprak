@@ -1,6 +1,6 @@
 # AGENTS.md
 
-- Gemensamma regler för arbetssätt, deploy, loggning, kostnader och Docker finns i [CLAUDE.md](CLAUDE.md). Allt arbete sker på `dev`; `main` ändras bara genom en PR från `dev` med merge commit.
+- Gemensamma regler för arbetssätt, deploy, loggning, kostnader och Docker finns i [CLAUDE.md](CLAUDE.md). Allt arbete sker på `dev`; `main` ändras bara genom en PR från `dev` med squash merge.
 - Läs [docs/project-context.md](docs/project-context.md), [docs/architecture.md](docs/architecture.md) och [docs/operations.md](docs/operations.md) före materiella ändringar. Domänkonventionen står i [docs/agents/domain.md](docs/agents/domain.md).
 - Bevara Worker-first-routingen; den upprätthåller canonical host, adminrouting och response policy. `/admin` släpps igenom till Workers Assets (som serverar `admin.html` där); skriv inte om den till `/admin.html`.
 - Publika förslag får inte bli publicerade utan granskningssteget.

@@ -67,7 +67,7 @@ Containern talar vanlig HTTP på port 8787. Lägg den bakom en omvänd proxy som
 
 - **Runtime:** Klarspråk är skrivet som en Cloudflare Worker. I containern körs den i `workerd`, samma runtime som Cloudflare använder, via `wrangler dev --local` (Miniflare). D1-databasen blir en lokal SQLite-fil under `/data/v3/d1/`.
 - **Start:** entrypointen kopierar en skrivskyddad mall till `/srv/klarsprak`, fyller i `PUBLIC_HOST` och Turnstile-nyckeln, kör väntande D1-migreringar och startar servern. Hemligheter skickas till wrangler via en privat env-fil (rättigheter 600) och bakas aldrig in i imagen.
-- **Imagen** bygger på `node:22-bookworm-slim`, kör som användaren `node` och har en healthcheck mot `/`. Den byggs i två steg, så att bara den neutraliserade källkoden hamnar i det färdiga lagret.
+- **Imagen** bygger på `node:24-trixie-slim` (Node LTS på Debian stable), kör som användaren `node` och har en healthcheck mot `/`. Den byggs i två steg, så att bara den neutraliserade källkoden hamnar i det färdiga lagret.
 - **Säkerhet:** svaren får strikt CSP, HSTS och övriga säkerhetshuvuden från appen. Admin-API:t kräver `Authorization: Bearer <ADMIN_TOKEN>`, och tokenet jämförs i konstant tid. Förslag kräver Turnstile och hastighetsbegränsas per hashad IP.
 - **Begränsningar:** `wrangler dev` är en utvecklingsserver som kör en process på en maskin. Det räcker gott för en webbplats med normal trafik, men ger inte Cloudflares automatiska skalning eller globala spridning.
 - **Felsökning:** `docker compose logs -f`. Hälsostatus syns med `docker compose ps`.
