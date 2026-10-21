@@ -1,5 +1,5 @@
 import app from "./worker.js";
-import { applyResponsePolicy } from "./response-policy.js";
+import { applyResponsePolicy, newNonce } from "./response-policy.js";
 
 const ADMIN_PAGE = "/admin";
 const ADMIN_ASSET = "/admin.html";
@@ -75,6 +75,7 @@ export function seoForPath(pathname) {
     };
   }
   if (pathname === "/robots.txt" || pathname === "/sitemap.xml") return null;
+  if (isDocsPath(pathname)) return { robots: INDEX_ROBOTS, canonical: null, description: null };
   return { robots: "noindex, nofollow", canonical: null, description: null };
 }
 
@@ -84,12 +85,29 @@ function requestWithPath(request, pathname) {
   return new Request(url, request);
 }
 
-function decorateHtml(response, { injectAdminRouting = false, seo = null } = {}) {
+export function isDocsPath(pathname) {
+  return pathname === "/docs" || pathname.startsWith("/docs/");
+}
+
+function decorateHtml(
+  response,
+  { injectAdminRouting = false, seo = null, scriptNonce = null } = {},
+) {
   const contentType = response.headers.get("content-type") || "";
   if (!contentType.includes("text/html")) return response;
 
   let injectedAdminRouting = false;
   const rewriter = new HTMLRewriter();
+
+  // The documentation site under /docs (built by Zensical) has a few small
+  // inline scripts; they get the response's CSP nonce so they may run.
+  if (scriptNonce) {
+    rewriter.on("script:not([src])", {
+      element(element) {
+        element.setAttribute("nonce", scriptNonce);
+      },
+    });
+  }
 
   if (seo) {
     rewriter.on("head", {
@@ -135,15 +153,18 @@ export default {
       response = await app.fetch(upstreamRequest, env, ctx);
     }
 
+    const nonce = newNonce();
     response = decorateHtml(response, {
       injectAdminRouting:
         externalUrl.pathname === ADMIN_PAGE || externalUrl.pathname === `${ADMIN_PAGE}/`,
       seo,
+      scriptNonce: isDocsPath(externalUrl.pathname) ? nonce : null,
     });
 
     return applyResponsePolicy(response, {
       noStore: isAdminPath(externalUrl.pathname),
       robots: seo?.robots ?? null,
+      nonce,
     });
   },
 };

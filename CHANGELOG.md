@@ -2,6 +2,10 @@
 
 Versions follow [semver](https://semver.org). The Docker image is tagged `X.Y.Z`, `X.Y`, `X` and `latest`.
 
+## 1.2.0 – 2026-10-21
+
+- The Worker serves the documentation site under `/docs` (built into the static assets at deploy) and gives its inline scripts the response's CSP nonce. `/docs` pages are indexable.
+
 ## 1.1.3 – 2026-10-21
 
 - The image runs on `node:24-trixie-slim`: Node 24, the current LTS, on Debian 13 (stable).

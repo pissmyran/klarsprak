@@ -35,3 +35,9 @@ test("robots and sitemap advertise only public content", async () => {
   assert.match(sitemap, /https:\/\/__PUBLIC_HOST__\/varfor<\/loc>/);
   assert.doesNotMatch(sitemap, /admin|api\//);
 });
+
+test("the documentation site under /docs is indexable", () => {
+  assert.equal(seoForPath("/docs/").robots, "index, follow, max-image-preview:large");
+  assert.equal(seoForPath("/docs/architecture/").canonical, null);
+  assert.equal(seoForPath("/docsx").robots, "noindex, nofollow");
+});
