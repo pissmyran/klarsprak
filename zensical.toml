@@ -14,10 +14,8 @@ nav = [
   { "Start" = "index.md" },
   { "Dokumentation" = [
     { "Översikt" = "oversikt.md" },
-    { "Projektkontext" = "project-context.md" },
     { "Arkitektur" = "architecture.md" },
     { "Drift" = "operations.md" },
-    { "Distribution" = "distribution.md" },
   ] },
   { "Docker" = "docker.md" },
   { "Källkod på GitHub" = "https://github.com/VineDrinker/klarsprak#readme" },

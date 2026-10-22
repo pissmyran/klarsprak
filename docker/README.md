@@ -6,6 +6,8 @@ Imagen innehåller hela webbplatsen och de redan publicerade termerna. Du behöv
 
 ## Kom igång
 
+Imagen ligger på Docker Hub som `docker.io/driftaegis/klarsprak`. Compose-filen nedan hämtar den därifrån, så du behöver varken klona repot eller bygga något.
+
 1. **Installera Docker.** På Windows och Mac: [Docker Desktop](https://www.docker.com/products/docker-desktop/). På Linux: paketet `docker.io` (Debian/Ubuntu) eller motsvarande. Podman fungerar också.
 2. **Skapa en mapp** och en fil i den som heter `docker-compose.yml`. Klistra in innehållet nedan.
 3. **Fyll i värdena** som står inom citattecken, se [Inställningar](#inställningar). Det enda du måste ändra är `ADMIN_TOKEN`.
@@ -67,12 +69,22 @@ Containern talar vanlig HTTP på port 8787. Lägg den bakom en omvänd proxy som
 
 - **Runtime:** Klarspråk är skrivet som en Cloudflare Worker. I containern körs den i `workerd`, samma runtime som Cloudflare använder, via `wrangler dev --local` (Miniflare). D1-databasen blir en lokal SQLite-fil under `/data/v3/d1/`.
 - **Start:** entrypointen kopierar en skrivskyddad mall till `/srv/klarsprak`, fyller i `PUBLIC_HOST` och Turnstile-nyckeln, kör väntande D1-migreringar och startar servern. Hemligheter skickas till wrangler via en privat env-fil (rättigheter 600) och bakas aldrig in i imagen.
-- **Imagen** bygger på `node:24-trixie-slim` (Node LTS på Debian stable), kör som användaren `node` och har en healthcheck mot `/`. Den byggs i två steg, så att bara den neutraliserade källkoden hamnar i det färdiga lagret.
+- **Imagen** bygger på `node:24-trixie-slim` (Node LTS på Debian stable), kör som användaren `node` och har en healthcheck mot `/`. Den innehåller bara källkod med platshållare; dina värden fylls i när containern startar.
 - **Säkerhet:** svaren får strikt CSP, HSTS och övriga säkerhetshuvuden från appen. Admin-API:t kräver `Authorization: Bearer <ADMIN_TOKEN>`, och tokenet jämförs i konstant tid. Förslag kräver Turnstile och hastighetsbegränsas per hashad IP.
 - **Begränsningar:** `wrangler dev` är en utvecklingsserver som kör en process på en maskin. Det räcker gott för en webbplats med normal trafik, men ger inte Cloudflares automatiska skalning eller globala spridning.
 - **Felsökning:** `docker compose logs -f`. Hälsostatus syns med `docker compose ps`.
 
 ## Changelog
+
+**1.2.1**
+- Adminsidan anropar `/admin/api/` direkt, utan ett extra skript som skrev om adresserna. Den gamla adressen `/admin/critical` finns inte längre.
+- `ALIAS_HOST` får skrivas med å, ä eller ö.
+
+**1.2.0**
+- Dokumentationen finns under `/docs`.
+
+**1.1.3**
+- Imagen bygger på `node:24-trixie-slim`: Node 24 (LTS) på Debian 13 (stable).
 
 **1.1.2**
 - `tools/render.mjs` skriver varje ifylld fil i en loop tills alla byte är skrivna, så att en kort skrivning inte kan lämna en avkortad fil.

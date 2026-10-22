@@ -57,7 +57,8 @@ export async function checkProduction({
   const checks = [
     ["root", CANONICAL_ROOT],
     ["terms", TERMS_API],
-    ["alias", IDN_ALIAS_ROOT],
+    // Without an alias host the rendered value is empty and there is nothing to check.
+    ...(IDN_ALIAS_ROOT === "https:///" ? [] : [["alias", IDN_ALIAS_ROOT]]),
   ];
 
   for (let attempt = 1; attempt <= ATTEMPTS; attempt += 1) {
@@ -77,7 +78,7 @@ export async function checkProduction({
 
     if (failures.length === 0) {
       console.log(
-        `Production checks passed on attempt ${attempt}: root, D1-backed terms API and IDN redirect`,
+        `Production checks passed on attempt ${attempt}: ${checks.map(([kind]) => kind).join(", ")}`,
       );
       return;
     }

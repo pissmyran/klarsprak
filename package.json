@@ -1,14 +1,11 @@
 {
   "name": "klarsprak",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",
-    "test": "node --test",
-    "deploy": "wrangler deploy --strict",
-    "migrate:production": "wrangler d1 migrations apply DB --remote",
-    "verify:production": "node scripts/check-production-domain.mjs"
+    "test": "node --test"
   },
   "devDependencies": {
     "wrangler": "^4.151.1"

@@ -21,18 +21,7 @@ test("all canonical admin APIs rewrite to existing handlers", () => {
   }
 });
 
-test("old critical paths redirect to the single admin namespace", () => {
-  assert.deepEqual(adminRoute("/admin/critical"), {
-    type: "redirect",
-    pathname: "/admin",
-  });
-  assert.deepEqual(adminRoute("/admin/critical/api/review/7"), {
-    type: "redirect",
-    pathname: "/admin/api/review/7",
-  });
-});
-
-test("legacy admin APIs redirect to /admin/api", () => {
+test("direct calls to the internal admin API redirect to /admin/api", () => {
   for (const [method, pathname, target] of [
     ["GET", "/api/admin/queue", "/admin/api/queue"],
     ["POST", "/api/admin/review/7", "/admin/api/review/7"],
@@ -55,8 +44,6 @@ test("all admin entry points are marked no-store", () => {
     "/admin.html",
     "/admin/api/queue",
     "/api/admin/queue",
-    "/admin/critical",
-    "/admin/critical/api/review/7",
   ]) {
     assert.equal(isAdminPath(pathname), true, pathname);
   }

@@ -1,92 +1,64 @@
 # Arkitektur
 
-## Översikt
+## Runtime
 
-```text
-Browser
-  |
-  v
-Cloudflare route
-  |
-  v
-src/index.js
-  |  host / admin / SEO / response policy
-  v
-src/worker.js
-  |              \
-  |               +--> ASSETS (public/)
-  |
-  +--> D1 (DB)
-        +--> publicerad termstate
-        +--> submission/review-state
-```
+Workern `klarsprak` startar i `src/index.js` och konfigureras i `wrangler.jsonc`:
 
-## Worker-first boundary
+- **Domän:** `PUBLIC_HOST`, plus ett valfritt `ALIAS_HOST` (till exempel en stavning med å) som skickas vidare till huvuddomänen.
+- **Statiska filer:** `public/`, med `run_worker_first: true`.
+- **D1:** bindningen `DB`.
+- **Hemligheter:** `ADMIN_TOKEN`, `TURNSTILE_SECRET` och `RATE_LIMIT_KEY`.
+- **Loggning:** alla loggar (sampling 1, med anropsloggar), spårningar till 1 %, frågesträngar maskeras och Workers Issues är på.
 
-`wrangler.jsonc` sätter `assets.run_worker_first=true`. Det är nödvändigt eftersom asset-serving annars kan svara innan Worker-koden hinner tillämpa:
+## Koden
 
-- canonical-host redirect,
-- adminrouting,
-- SEO/robots-policy,
-- security/cache headers.
+- **`src/index.js`** är den yttre policyn: aliasdomänen skickas till huvuddomänen, adminvägarna mappas, SEO-metadata läggs till och säkerhetshuvudena sätts på varje svar (`src/response-policy.js`).
+- **`src/worker.js`** är applikationen: publika termer, förslag, granskning, D1 och vidarelämning till de statiska filerna.
 
-Att ändra till asset-first är därför en arkitektur- och säkerhetsändring.
+## Workern först
 
-## Canonical host
+Utan `run_worker_first` skulle Cloudflare kunna svara med en statisk fil innan Workern hinner skicka aliasdomänen vidare, styra admin, sätta SEO och lägga på säkerhetshuvuden. Att byta till att de statiska filerna går först är därför en säkerhetsändring.
 
-Den publika canonical hosten är `<din-host>`. IDN-aliaset finns som separat route och ska canonicaliseras till huvudhosten innan normal rendering.
+## Admin
 
-## Publik läsning
+Gränssnittet ligger på `/admin`, och API:t på `/admin/api/…`. Båda ligger under `/admin`, så en Cloudflare Access-applikation för den sökvägen kan skydda allt som ett extra lager. Workern skriver om `/admin/api/…` internt till `/api/admin/…`, och ett direkt anrop till `/api/admin/…` skickas vidare till `/admin/api/…`. Alla anrop kräver `Authorization: Bearer <ADMIN_TOKEN>`, som jämförs i konstant tid, och adminsvaren cacheas aldrig.
 
-Publik termdata läses från D1 via API. Frontend är presentation och ska inte bära en separat kopia som kan drifta från databasen.
+`/admin` släpps igenom till de statiska filerna, som serverar `admin.html` där. Skriv aldrig om den till `/admin.html`; då uppstår en omdirigeringsloop.
 
-## Submission
+## API
 
-`POST /api/submit` representerar publik ingress för förslag.
+| Anrop | Gör |
+| --- | --- |
+| `GET /api/terms` | De publicerade termerna. |
+| `POST /api/submit` | Ett nytt förslag (Turnstile och hastighetsbegränsning). |
+| `GET /admin/api/queue` | Granskningskön. |
+| `GET /admin/api/terms` | Alla termer, även opublicerade. |
+| `POST /admin/api/review/:id` | Granskar ett förslag. |
+| `PUT /admin/api/terms/:id` | Redigerar en term. |
+| `POST /admin/api/terms/:id/status` | Publicerar eller arkiverar en term. |
 
-Flödet ska:
+## Förslag
 
-1. validera requesten;
-2. upprätthålla Turnstile-gränsen;
-3. skriva submission-state;
-4. inte publicera posten automatiskt.
+`POST /api/submit` validerar förslaget, kontrollerar Turnstile mot `TURNSTILE_HOSTNAMES`, begränsar till fem förslag per timme och IP-adress (IP-adressen sparas bara som en HMAC med `RATE_LIMIT_KEY`, eller `ADMIN_TOKEN` om den saknas) och sparar förslaget i granskningskön. Det publiceras aldrig automatiskt.
 
-## Review och publicering
+## D1
 
-Adminytan arbetar mot review-state. Godkännande/publicering är explicita stateövergångar. Det gör att:
+D1 är den enda sanningen om publicerade termer och granskningen. Workern använder D1 Sessions API: `GET /api/terms` läser från närmaste replik, och allt annat från primären. Därför kan läsrepliker vara påslagna. Databasen ska vara skapad med `jurisdiction=eu`.
 
-- inkommet material kan granskas innan det blir publikt;
-- publikt termstate förblir skiljt från submissionhistorik;
-- frontend inte behöver avgöra vad som är publicerbart.
+## Säkerhetshuvuden
 
-## Trust boundaries
+- **CSP** tillåter inte inbäddade skript i allmänhet. `script-src` får en ny nonce för varje svar, så att Cloudflares egna inbäddade skript (som JavaScript Detection) kan bära samma nonce. Den enda externa källan för skript och ramar är Turnstile på `https://challenges.cloudflare.com`.
+- **Skript** ligger som egna filer, `/app.js` för den publika sidan och `/admin.js` för admin.
+- **Dokumentationen** under `/docs` byggs in i de statiska filerna vid driftsättning, och dess inbäddade skript får svarets nonce.
 
-- **Internet → Worker:** host/routing/response-policy.
-- **Publik submission → review state:** Turnstile + server-side validering.
-- **Admin → review/publicering:** avsedd adminauktorisering.
-- **Worker → D1:** canonical application state.
-- **Worker → ASSETS:** presentation, aldrig auktoritet för termdata.
+## SEO och cache
 
-## Klientkod och CSP
+De publika sidorna får canonical-länk, robots och beskrivning från Workern. Admin och andra icke-publika sidor indexeras inte och cacheas inte.
 
-Publik applikationslogik och adminlogik ligger i separata first-party assets (`/app.js` respektive `/admin.js`) i stället för inline-script. Response-CSP tillåter därför inte generell inline-JavaScript. `script-src` får en unik nonce per response; Cloudflare kan då bära samma nonce på sin edge-injicerade JavaScript Detection-snippet utan att `'unsafe-inline'` återinförs. Turnstile är den enda externa script/frame-originen som explicit tillåts och är avgränsad till `https://challenges.cloudflare.com`.
+## Tema
 
-## Caching och indexering
+Det finns tre teman: `legacy` (standard), `forest` (med etiketten från `SITE_FAMILY`) och `blackout`. Valet sparas i `localStorage["<prefix>.theme"]` och cookien `<prefix>_theme`, där prefixet är `THEME_KEY_PREFIX` och cookien kan delas med `THEME_COOKIE_DOMAIN`. Temat ändrar bara utseendet och påverkar aldrig admin, Turnstile eller publiceringen.
 
-Publika indexerbara sidor får canonical/robots metadata. Admin- och andra icke-publika ytor ska inte bli indexerbara eller cacheas som allmän publik data.
+## PWA
 
-## Failure model
-
-Vid fel i termvisning:
-
-1. verifiera host/Worker-route;
-2. verifiera API-response;
-3. verifiera D1-read/state;
-4. kontrollera frontend/assets sist.
-
-Vid submissionsproblem:
-
-1. requestvalidering;
-2. Turnstile;
-3. D1-write;
-4. review/adminflöde.
+Sidan har ett webbmanifest, ikoner i 192 och 512 pixlar och en service worker. Service workern hämtar alltid från nätet och cachear ingenting, varken sidor, termer, förslag eller admin. Den är bara till för att sidan ska kunna installeras.

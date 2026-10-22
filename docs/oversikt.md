@@ -1,50 +1,30 @@
-# Dokumentation
-
-Navigationssida för Klarspråks tekniska dokumentation.
-
-## Hitta rätt
-
-| Fråga | Dokument |
-| --- | --- |
-| Vad ansvarar tjänsten för och vilken runtime gäller? | [Projektkontext](project-context.md) |
-| Hur fungerar Worker, assets, D1 och publiceringsflödet? | [Arkitektur](architecture.md) |
-| Hur utvecklar, migrerar, verifierar och deployar jag? | [Drift](operations.md) |
-
-## Systemöversikt
+# Översikt
 
 ```text
-Browser
-  |
-  v
-src/index.js
-  |  canonical host / admin routing / SEO / response policy
-  v
-src/worker.js
-  |            \
-  |             +--> ASSETS (public/)
-  |
-  +--> D1 (D1_DATABASE_NAME)
-        +--> publicerade termer
-        +--> submissions / review state
+Webbläsare
+    |
+    v
+src/index.js     värdnamn, adminrouting, SEO och säkerhetshuvuden
+    |
+    v
+src/worker.js ──> D1 (DB)    publicerade termer, förslag och granskning
+    |
+    +──> ASSETS (public/)    sidorna, skripten och stilarna
 ```
 
-## Viktiga flöden
+| Ämne | Sida |
+| --- | --- |
+| Routing, publicering, granskning, säkerhet och PWA | [Arkitektur](architecture.md) |
+| Lokal utveckling, migreringar, driftsättning, kontroller och felsökning | [Drift](operations.md) |
 
-### Läsning
+## De tre flödena
 
-Publika klienter hämtar publicerade termer via API. D1 är source of truth; frontend renderar den data API:t levererar.
+- **Läsning:** sidan hämtar de publicerade termerna från `GET /api/terms`. D1 är den enda källan; sidan visar bara det API:t svarar.
+- **Förslag:** en besökare skickar ett förslag med `POST /api/submit`. Turnstile skyddar formuläret, och förslaget hamnar i granskningskön utan att publiceras.
+- **Granskning:** administratören läser kön på `/admin` och redigerar, godkänner, publicerar eller arkiverar med uttryckliga steg.
 
-### Submission
+## Innan du ändrar något
 
-Användaren skickar ett förslag. Turnstile skyddar den publika ingressen. Förslaget går till review-state och blir inte publikt av sig självt.
-
-### Review/publicering
-
-Adminflödet läser granskningskö och utför explicita stateövergångar för redigering, godkännande, publicering eller arkivering.
-
-## Ändringskarta
-
-- routes/host/SEO → [architecture.md](architecture.md) + [operations.md](operations.md)
-- D1-schema/publiceringsstate → migration + [project-context.md](project-context.md)
-- submission/review/admin → architecture + säkerhetsrelevant verifiering
-- Wrangler bindings/domains → project-context + operations
+- **Routes, värdnamn eller SEO:** läs [Arkitektur](architecture.md) och [Drift](operations.md).
+- **D1-schemat eller publiceringen:** skriv en ny migrering och uppdatera [Arkitektur](architecture.md).
+- **Förslag, granskning eller admin:** läs [Arkitektur](architecture.md) och kontrollera säkerhetsgränserna efteråt.
