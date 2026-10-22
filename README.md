@@ -46,7 +46,15 @@ Koden innehåller inga kontouppgifter. Där ett eget värde behövs, som domän,
 
 ## Köra med Docker
 
-Klarspråk finns som färdig image, `docker.io/driftaegis/klarsprak`. Alla inställningar beskrivs i [docker/README.md](docker/README.md). Imagen byggs från repots rot med `docker build -t klarsprak .`, och ändringarna listas i [CHANGELOG.md](CHANGELOG.md).
+Klarspråk finns som färdig image på Docker Hub, `docker.io/driftaegis/klarsprak`. Du behöver inte bygga något själv: i `docker-compose.yml` står imagen så här, och `docker compose up -d` hämtar den.
+
+I `docker-compose.yml`:
+
+```yaml
+    image: docker.io/driftaegis/klarsprak:1
+```
+
+Taggen `1` ger alla uppdateringar inom version 1; `X.Y` ger bara rättningar och `X.Y.Z` exakt en version. Alla inställningar beskrivs i [docker/README.md](docker/README.md), och ändringarna listas i [CHANGELOG.md](CHANGELOG.md). Vill du bygga imagen själv från källkoden: `docker build -t klarsprak .` i repots rot.
 
 ## Bidra
 
