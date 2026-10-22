@@ -78,7 +78,7 @@ export async function checkProduction({
 
     if (failures.length === 0) {
       console.log(
-        `Production checks passed on attempt ${attempt}: root, D1-backed terms API and IDN redirect`,
+        `Production checks passed on attempt ${attempt}: ${checks.map(([kind]) => kind).join(", ")}`,
       );
       return;
     }

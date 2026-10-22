@@ -5,6 +5,7 @@ Versions follow [semver](https://semver.org). The Docker image is tagged `X.Y.Z`
 ## 1.2.1 – 2026-10-22
 
 - The admin page calls `/admin/api/` directly; the script that rewrote its requests from `/api/admin/` is gone, and the old `/admin/critical` address no longer exists.
+- `ALIAS_HOST` may be written with å, ä or ö; it is compared in the same ASCII (punycode) form as the request's host name.
 
 ## 1.2.0 – 2026-10-21
 

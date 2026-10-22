@@ -1,6 +1,15 @@
 // klarsprak Worker: statiska assets + publika termer + granskningsflöde.
 const CANONICAL_HOST = "__PUBLIC_HOST__";
 const CANONICAL_ALIAS_HOST = "__ALIAS_HOST__";
+// URL.hostname is always ASCII (punycode), so compare against the alias in the
+// same form; ALIAS_HOST may be written with å, ä or ö.
+const ALIAS_HOSTNAME = (() => {
+  try {
+    return CANONICAL_ALIAS_HOST ? new URL(`https://${CANONICAL_ALIAS_HOST}`).hostname : "";
+  } catch {
+    return "";
+  }
+})();
 
 export function d1SessionConstraint(method, pathname) {
   return method === "GET" && pathname === "/api/terms" ? "first-unconstrained" : "first-primary";
@@ -444,7 +453,7 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     const { pathname } = url;
-    if (url.hostname === CANONICAL_ALIAS_HOST) {
+    if (ALIAS_HOSTNAME && url.hostname === ALIAS_HOSTNAME) {
       url.hostname = CANONICAL_HOST;
       return Response.redirect(url.toString(), 301);
     }

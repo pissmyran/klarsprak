@@ -76,6 +76,7 @@ Containern talar vanlig HTTP på port 8787. Lägg den bakom en omvänd proxy som
 
 **1.2.1**
 - Adminsidan anropar `/admin/api/` direkt, utan ett extra skript som skrev om adresserna. Den gamla adressen `/admin/critical` finns inte längre.
+- `ALIAS_HOST` får skrivas med å, ä eller ö.
 
 **1.2.0**
 - Dokumentationen finns under `/docs`.
