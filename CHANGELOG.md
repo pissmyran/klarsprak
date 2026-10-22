@@ -2,6 +2,10 @@
 
 Versions follow [semver](https://semver.org). The Docker image is tagged `X.Y.Z`, `X.Y`, `X` and `latest`.
 
+## 1.2.1 – 2026-10-22
+
+- The admin page calls `/admin/api/` directly; the script that rewrote its requests from `/api/admin/` is gone, and the old `/admin/critical` address no longer exists.
+
 ## 1.2.0 – 2026-10-21
 
 - The Worker serves the documentation site under `/docs` (built into the static assets at deploy) and gives its inline scripts the response's CSP nonce. `/docs` pages are indexable.

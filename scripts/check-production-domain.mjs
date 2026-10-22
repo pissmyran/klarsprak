@@ -57,7 +57,8 @@ export async function checkProduction({
   const checks = [
     ["root", CANONICAL_ROOT],
     ["terms", TERMS_API],
-    ["alias", IDN_ALIAS_ROOT],
+    // Without an alias host the rendered value is empty and there is nothing to check.
+    ...(IDN_ALIAS_ROOT === "https:///" ? [] : [["alias", IDN_ALIAS_ROOT]]),
   ];
 
   for (let attempt = 1; attempt <= ATTEMPTS; attempt += 1) {

@@ -66,7 +66,7 @@ function renderTerms(items) {
 async function loadAll() {
   statusEl.textContent = "Laddar…";
   try {
-    const [q, t] = await Promise.all([api("/api/admin/queue"), api("/api/admin/terms")]);
+    const [q, t] = await Promise.all([api("/admin/api/queue"), api("/admin/api/terms")]);
     renderQueue(q.submissions || []);
     renderTerms(t.terms || []);
     statusEl.textContent = `${(q.submissions || []).length} väntande · ${(t.terms || []).length} termposter.`;
@@ -84,7 +84,7 @@ queueView.addEventListener("click", async (e) => {
   try {
     const body = { action, note: card.querySelector(".note").value.trim() };
     if (action === "approve") body.publication = publicationFrom(card);
-    await api(`/api/admin/review/${card.dataset.submissionId}`, {
+    await api(`/admin/api/review/${card.dataset.submissionId}`, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(body),
@@ -102,7 +102,7 @@ termsView.addEventListener("click", async (e) => {
   try {
     if (e.target.closest("[data-save]")) {
       if (!validate(card)) return;
-      await api(`/api/admin/terms/${id}`, {
+      await api(`/admin/api/terms/${id}`, {
         method: "PUT",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ publication: publicationFrom(card) }),
@@ -110,7 +110,7 @@ termsView.addEventListener("click", async (e) => {
     } else {
       const b = e.target.closest("[data-status]");
       if (!b) return;
-      await api(`/api/admin/terms/${id}/status`, {
+      await api(`/admin/api/terms/${id}/status`, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ status: b.dataset.status }),

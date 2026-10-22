@@ -4,9 +4,9 @@ import { applyResponsePolicy, newNonce } from "./response-policy.js";
 const ADMIN_PAGE = "/admin";
 const ADMIN_ASSET = "/admin.html";
 const ADMIN_API_PREFIX = "/admin/api/";
-const LEGACY_ADMIN_API_PREFIX = "/api/admin/";
-const LEGACY_CRITICAL_PAGE = "/admin/critical";
-const LEGACY_CRITICAL_API_PREFIX = "/admin/critical/api/";
+// The admin API is reached at /admin/api/ (under the Access-protected /admin
+// path) and handled internally under /api/admin/.
+const INTERNAL_ADMIN_API_PREFIX = "/api/admin/";
 const INDEX_ROBOTS = "index, follow, max-image-preview:large";
 
 export function isAdminPath(pathname) {
@@ -15,10 +15,7 @@ export function isAdminPath(pathname) {
     pathname === `${ADMIN_PAGE}/` ||
     pathname === ADMIN_ASSET ||
     pathname.startsWith(ADMIN_API_PREFIX) ||
-    pathname.startsWith(LEGACY_ADMIN_API_PREFIX) ||
-    pathname === LEGACY_CRITICAL_PAGE ||
-    pathname === `${LEGACY_CRITICAL_PAGE}/` ||
-    pathname.startsWith(LEGACY_CRITICAL_API_PREFIX)
+    pathname.startsWith(INTERNAL_ADMIN_API_PREFIX)
   );
 }
 
@@ -34,25 +31,18 @@ export function adminRoute(pathname) {
   if (pathname === `${ADMIN_PAGE}/`) {
     return { type: "redirect", pathname: ADMIN_PAGE };
   }
-  if (pathname === LEGACY_CRITICAL_PAGE || pathname === `${LEGACY_CRITICAL_PAGE}/`) {
-    return { type: "redirect", pathname: ADMIN_PAGE };
-  }
-  if (pathname.startsWith(LEGACY_CRITICAL_API_PREFIX)) {
-    return {
-      type: "redirect",
-      pathname: `${ADMIN_API_PREFIX}${pathname.slice(LEGACY_CRITICAL_API_PREFIX.length)}`,
-    };
-  }
   if (pathname.startsWith(ADMIN_API_PREFIX)) {
     return {
       type: "rewrite",
-      pathname: `${LEGACY_ADMIN_API_PREFIX}${pathname.slice(ADMIN_API_PREFIX.length)}`,
+      pathname: `${INTERNAL_ADMIN_API_PREFIX}${pathname.slice(ADMIN_API_PREFIX.length)}`,
     };
   }
-  if (pathname.startsWith(LEGACY_ADMIN_API_PREFIX)) {
+  // Direct calls to the internal path are sent to the public one, so the admin
+  // API is only ever reached through /admin/.
+  if (pathname.startsWith(INTERNAL_ADMIN_API_PREFIX)) {
     return {
       type: "redirect",
-      pathname: `${ADMIN_API_PREFIX}${pathname.slice(LEGACY_ADMIN_API_PREFIX.length)}`,
+      pathname: `${ADMIN_API_PREFIX}${pathname.slice(INTERNAL_ADMIN_API_PREFIX.length)}`,
     };
   }
   return { type: "pass", pathname };
@@ -89,14 +79,10 @@ export function isDocsPath(pathname) {
   return pathname === "/docs" || pathname.startsWith("/docs/");
 }
 
-function decorateHtml(
-  response,
-  { injectAdminRouting = false, seo = null, scriptNonce = null } = {},
-) {
+function decorateHtml(response, { seo = null, scriptNonce = null } = {}) {
   const contentType = response.headers.get("content-type") || "";
   if (!contentType.includes("text/html")) return response;
 
-  let injectedAdminRouting = false;
   const rewriter = new HTMLRewriter();
 
   // The documentation site under /docs (built by Zensical) has a few small
@@ -123,16 +109,6 @@ function decorateHtml(
     });
   }
 
-  if (injectAdminRouting) {
-    rewriter.on("script", {
-      element(element) {
-        if (injectedAdminRouting) return;
-        injectedAdminRouting = true;
-        element.before('<script src="/admin-access-routing.js"></script>', { html: true });
-      },
-    });
-  }
-
   return rewriter.transform(response);
 }
 
@@ -155,8 +131,6 @@ export default {
 
     const nonce = newNonce();
     response = decorateHtml(response, {
-      injectAdminRouting:
-        externalUrl.pathname === ADMIN_PAGE || externalUrl.pathname === `${ADMIN_PAGE}/`,
       seo,
       scriptNonce: isDocsPath(externalUrl.pathname) ? nonce : null,
     });

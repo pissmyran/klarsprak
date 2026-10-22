@@ -4,104 +4,64 @@
 
 ```bash
 npm install
+npx wrangler d1 migrations apply DB --local
 npm run dev
 ```
 
-Repositoryt har inget `package-lock.json`, så `npm ci` är inte den verifierade installationsvägen.
+Repot har ingen `package-lock.json`, så installera med `npm install`, inte `npm ci`.
 
-## Verifiering före PR/deploy
+## Kontroller före push
 
 ```bash
 npm test
-npx wrangler d1 migrations apply DB --local
 npx wrangler deploy --dry-run
 ```
 
-Verifiera dessutom berörda flöden manuellt när ändringen påverkar routing, submission eller admin.
+Prova dessutom flödena för hand när en ändring rör routing, förslag eller admin.
+
+## Driftsättning
+
+Produktionen driftsätts från en renderad kopia, antingen från din dator eller med Workers Builds när en PR mergas till `main`; se `README.md`.
+
+## Migreringar
+
+Workers Builds kör inte D1-migreringarna, så de körs för hand från en renderad kopia:
+
+```bash
+node tools/render.mjs <din-fil.env> build
+npx wrangler d1 migrations apply DB --remote --cwd build
+```
+
+- Schemaändringar görs bara med nya migreringar, aldrig direkt i produktionen.
+- En migrering som lägger till körs före deployen av den nya Workern, en som tar bort efter.
+
+## Kontroll efter driftsättning
+
+Från samma renderade kopia:
+
+```bash
+node build/scripts/check-production-domain.mjs
+```
+
+Den kontrollerar att startsidan svarar `200`, att `/api/terms` ger JSON med en lista med termer och, om `ALIAS_HOST` är satt, att aliasdomänen skickar vidare till huvuddomänen med `301`. Varje kontroll görs upp till fem gånger.
+
+Kontrollera också:
+
+- **Förslag:** att ett förslag hamnar i granskningskön utan att publiceras, och att CSP:n tillåter Turnstile men inte `'unsafe-inline'` i `script-src`.
+- **Admin:** att `/admin/api/…` kräver `ADMIN_TOKEN` och att publicering och arkivering bara sker med uttryckliga steg.
+- **SEO:** att de publika sidorna har canonical och robots, och att `/admin` varken indexeras eller cacheas.
 
 ## D1
 
-Produktionsmigrationer körs med:
-
-```bash
-npm run migrate:production
-```
-
-Regler:
-
-- schemaändringar ska vara versionsstyrda;
-- gör inte ad hoc-schemaändringar i produktion;
-- verifiera migrationsordning och kompatibilitet med aktuell Worker-kod;
-- uppdatera project-context när state ownership eller schemaansvar ändras.
-
-## D1 data locality och read replication
-
-Produktionsdatabasen ska skapas med `jurisdiction=eu`. Cloudflare-jurisdiction är creation-time providerkonfiguration och kan inte läggas till på en befintlig D1-databas; replacement görs därför genom verifierad export/import till en ny EU-databas före binding-cutover.
-
-Klarspråks D1-requestväg använder Sessions API. Read replication får därför vara `auto` på EU-databasen; replikerna hålls inom den konfigurerade EU-jurisdictionen.
-
-Produktionsmigrationer ska gå via bindingen:
-
-```bash
-npm run migrate:production
-```
-
-## Deployment
-
-```bash
-npm run deploy
-```
-
-Deploy använder `wrangler deploy --strict`. Vanlig PR-verifiering ska inte implicit deploya.
-
-Efter avsedd produktiondeploy:
-
-```bash
-npm run verify:production
-```
-
-## Verifieringsmatris
-
-### Host/routing
-
-Kontrollera canonical host och IDN-alias, inklusive redirect och Worker-first-beteende.
-
-### Publik termläsning
-
-Verifiera att API:t läser publicerad data från D1 och att frontend återger samma state.
-
-### Submission
-
-Verifiera validering, Turnstile och att ett förslag hamnar i review-state utan automatisk publicering. Response-CSP ska explicit tillåta `https://challenges.cloudflare.com` för Turnstiles script/frame och ska inte återinföra `'unsafe-inline'` för `script-src`. `script-src` ska innehålla en unik `nonce-...` per response; efter production deploy ska Cloudflares injicerade JavaScript Detection-script bära samma nonce så att det inte blockeras av CSP.
-
-### Admin/review
-
-Verifiera behörighetsgräns och explicita stateövergångar för godkännande/publicering/arkivering.
-
-### SEO/cache
-
-Verifiera att publika sidor har avsedd canonical/robots metadata och att adminytor inte blir indexerbara eller publikt cacheade.
+- Databasen ska vara skapad med `jurisdiction=eu`. Det går inte att ändra efteråt, så ett byte görs som export och import till en ny EU-databas innan bindningen byts.
+- Läsrepliker får vara påslagna (`auto`), eftersom Workern använder Sessions API. Replikerna stannar inom EU.
 
 ## Felsökning
 
-### Tom eller felaktig publik termlista
+**Tom eller fel termlista:** kontrollera i den här ordningen domän och route, `/api/terms`, de publicerade termerna i D1 och sist sidan själv.
 
-1. host/route,
-2. Worker/API,
-3. D1-read/publicerad state,
-4. frontend.
+**Förslag misslyckas:** kontrollera förslagets data, Turnstile (nycklar och `TURNSTILE_HOSTNAMES`), skrivningen till D1 och Workerns logg.
 
-### Submission misslyckas
+**Admin fungerar inte:** kontrollera `ADMIN_TOKEN` och, om du använder den, Access-applikationen för `/admin` innan du ändrar någon data. Gör aldrig admin-API:t mer publikt för att lösa ett åtkomstproblem.
 
-1. requestdata,
-2. Turnstile,
-3. D1-write,
-4. serverlogg.
-
-### Adminproblem
-
-Kontrollera auth/route före dataändringar. Försök inte lösa accessproblem genom att göra admin-API mer publikt.
-
-## Observability
-
-Persistent logs/traces är aktiverade med sampling och query-string-redaction. Redaction ska behållas även under felsökning; lägg inte känsliga requestparametrar i loggar.
+Frågesträngarna maskeras i loggarna även vid felsökning; lägg aldrig känsliga parametrar i loggar.
