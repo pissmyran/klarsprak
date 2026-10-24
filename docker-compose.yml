@@ -3,7 +3,7 @@
 # The site answers on port 8787; put it behind your own reverse proxy for HTTPS.
 services:
   klarsprak:
-    image: docker.io/driftaegis/klarsprak:1
+    image: docker.io/driftaegis/klarsprak:1@sha256:f08dd4bd0afbfa2afe0bf39e2137a915223cf7a8020941b4109aeab6841f5098
     restart: unless-stopped
     ports:
       - "8787:8787"
