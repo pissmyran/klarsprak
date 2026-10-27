@@ -1,6 +1,6 @@
 # Klarspråk
 
-**Dokumentation:** [vinedrinker.github.io/klarsprak](https://vinedrinker.github.io/klarsprak/) – start, dokumentation och Docker på en sida med sök.
+**Dokumentation:** [pissmyran.github.io/klarsprak](https://pissmyran.github.io/klarsprak/) – start, dokumentation och Docker på en sida med sök.
 
 Klarspråk jämför hur ord och uttryck används i vanlig svenska med hur de används i lag och hos myndigheter, med källor på båda sidor. Besökare kan föreslå nya termer, och ett förslag publiceras först när en administratör har granskat det.
 
@@ -58,7 +58,7 @@ Taggen `1` ger alla uppdateringar inom version 1; `X.Y` ger bara rättningar och
 
 ## Bidra
 
-Frågor och idéer tas i [Discussions](https://github.com/VineDrinker/.github/discussions), fel och förslag som issues här. Läs [CONTRIBUTING.md](https://github.com/VineDrinker/.github/blob/main/CONTRIBUTING.md) innan du öppnar en pull request. Säkerhetsproblem rapporteras privat via fliken Security.
+Frågor och idéer tas i [Discussions](https://github.com/pissmyran/.github/discussions), fel och förslag som issues här. Läs [CONTRIBUTING.md](https://github.com/pissmyran/.github/blob/main/CONTRIBUTING.md) innan du öppnar en pull request. Säkerhetsproblem rapporteras privat via fliken Security.
 
 ## Licens
 

@@ -6,8 +6,8 @@
 [project]
 site_name = "Klarspråk"
 site_description = "Jämför vanlig svenska med lagens och myndigheternas språk."
-repo_url = "https://github.com/VineDrinker/klarsprak"
-repo_name = "VineDrinker/klarsprak"
+repo_url = "https://github.com/pissmyran/klarsprak"
+repo_name = "pissmyran/klarsprak"
 docs_dir = "site-docs"
 site_dir = "site"
 nav = [
@@ -18,7 +18,7 @@ nav = [
     { "Drift" = "operations.md" },
   ] },
   { "Docker" = "docker.md" },
-  { "Källkod på GitHub" = "https://github.com/VineDrinker/klarsprak#readme" },
+  { "Källkod på GitHub" = "https://github.com/pissmyran/klarsprak#readme" },
 ]
 
 [project.theme]
@@ -65,7 +65,7 @@ toggle.name = "Följ systemets inställning"
 
 [[project.extra.social]]
 icon = "fontawesome/brands/github"
-link = "https://github.com/VineDrinker/klarsprak#readme"
+link = "https://github.com/pissmyran/klarsprak#readme"
 name = "Källkoden på GitHub"
 
 [project.markdown_extensions]
