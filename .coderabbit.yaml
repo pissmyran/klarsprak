@@ -1,0 +1,110 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+
+inheritance: true
+
+reviews:
+  path_instructions:
+    - path: "src/worker.js"
+      instructions: |
+        Vid ändringar i adminhanterare, kontrollera att varje läsning och
+        mutation kräver giltig Bearer-token och nekar åtkomst när ADMIN_TOKEN saknas.
+        Vid ändringar i inskick, kontrollera att Turnstile verifieras på servern
+        med success, action term_submit och tillåtet hostname före databasinsättning.
+        Nätverksfel eller saknad Turnstile-konfiguration får inte godkänna inskick.
+        Kontrollera att submitter_ip endast får en HMAC-identitet, aldrig rå IP.
+        Bevara RATE_LIMIT_KEY med ADMIN_TOKEN som reserv och felsvaret när IP finns
+        men nyckel saknas. Vid ändrad frekvensbegränsning, granska tidsformat,
+        tidsfönster och samtidiga inskick; anta inte att separat COUNT och INSERT
+        ger en atomisk gräns.
+        Vid ändringar i publicering, kontrollera att submissions förblir granskningskö
+        och att /api/terms endast lämnar publicerade published_terms utan interna
+        anteckningar eller inskickaruppgifter. Kontrollera obligatoriska källfält,
+        längdgränser och http/https för källadresser.
+        Kontrollera att godkännande och publicering lyckas eller återställs tillsammans.
+        Granska samtidiga approve/reject och upprepade anrop mot pending-villkor,
+        unika index och antal ändrade rader, inte bara en föregående SELECT.
+        Vid ändrade D1-routes, kontrollera sessionsvalet: adminläsningar och mutationer
+        börjar på first-primary; publik termläsning använder first-unconstrained.
+
+    - path: "{src/index.js,src/response-policy.js,wrangler.jsonc}"
+      instructions: |
+        Vid ändrad routing eller Assets-konfiguration, kontrollera att Workern
+        körs före statiska filer. /admin ska nå Assets utan omskrivning till
+        /admin.html. /admin/api/ skrivs om internt till /api/admin/ och direkta
+        interna anrop omdirigeras till den publika adminvägen.
+        Kontrollera att omskrivningar bevarar metod, body, query och Authorization.
+        Vid ändrade svar, kontrollera no-store på adminvägar även för fel och
+        omdirigeringar samt att publika svar behåller sin avsedda cachepolicy.
+        Vid ändrad CSP eller HTML-omskrivning, kontrollera att dokumentationens
+        inline-skript får samma nonce som svarets CSP och att Turnstile fortfarande
+        tillåts utan att script-src öppnas med unsafe-inline.
+        Vid ändrade värdnamn, kontrollera att IDN-alias jämförs som punycode och
+        omdirigeras till PUBLIC_HOST med bevarad sökväg och query.
+
+    - path: "public/{app,admin}.js"
+      instructions: |
+        Vid ändrad rendering av API-data, kontrollera escaping i HTML-text,
+        attribut och textarea samt att källänkarnas protokoll valideras i serverflödet.
+        Vid ändrade adminanrop, kontrollera /admin/api/-vägarna och Bearer-headern.
+        Token får inte hamna i URL, loggar eller publikt renderat innehåll.
+        Vid ändrat förslagsformulär, kontrollera mappningen från cf-turnstile-response
+        till turnstileToken och att klienten inte visar publicering som lyckad
+        innan serverns granskningsflöde har godkänt posten.
+
+    - path: "public/{service-worker,pwa}.js"
+      instructions: |
+        Vid ändrad service worker eller dess scope, kontrollera att admininnehåll,
+        tokenbärande anrop och mutationer inte lagras eller spelas upp.
+        Nuvarande service worker är network-only. Om cache införs, kontrollera
+        uttryckligen vilka publika data som får lagras, hur de blir aktuella efter
+        arkivering och att no-store inte kringgås.
+        Kontrollera att registrering endast sker i en säker kontext.
+
+    - path: "migrations/*.sql"
+      instructions: |
+        Vid schemaändringar, kontrollera D1/SQLite-kompatibilitet och uppgradering
+        med befintliga submissions och published_terms. Bevara unik submission_id,
+        unik LOWER(TRIM(term)), statusvillkor och berörda runtime-frågor.
+        Kontrollera migreringsordning och dataförlust vid tabell- eller kolumnändringar.
+        Containerstart tillämpar migreringar före serverstart; anta inte motsatt ordning.
+        Vid dataändringar, kontrollera att seed, återköning och arkivering inte
+        återpublicerar tidigare arkiverade poster eller raderar granskningshistorik.
+        Kontrollera att nya eller ändrade publiceringsposter har separata språkliga
+        och institutionella källor som stöder den påstådda betydelseskillnaden.
+        Bevara saneringen av historiska råa submitter_ip-värden.
+
+    - path: "{tools/render.mjs,cloudflare.example.env}"
+      instructions: |
+        Vid ändrade platshållare, kontrollera att de deklareras i cloudflare.example.env
+        och ersätts i avsedda runtimefiler. Saknade värden ska ge fel; avsiktligt
+        tomma värden ska fungera, inklusive borttagning av tom alias-route.
+        Vid ändrad kopiering, overlay eller substitution, kontrollera att utdata
+        inte kan radera källträdet, kopieras rekursivt till sig själv eller följa
+        länkar till privata filer vid skrivning.
+        Kontrollera att privata värdefiler och Worker-hemligheter inte följer med
+        till public, image, publicerade artefakter eller loggar.
+
+    - path: "{Dockerfile,docker-compose.yml,package.json,bun.lock,docker/entrypoint.sh,docker/import-settings.sh,docker/wrangler.jsonc}"
+      instructions: |
+        Vid ändrad runtime eller beroenden, kontrollera Node, Wrangler och workerd
+        tillsammans med kommandona i docker/entrypoint.sh. Docker installerar med
+        npm från package.json, inte från bun.lock; anta inte att låsfilen styr imagen.
+        Kontrollera att src, public, migrations, renderaren och containerkonfigurationen
+        finns i imagen, att processen körs som icke-root och att /data och /srv är skrivbara.
+        Vid ändrad start eller lagring, kontrollera att migrering och server använder
+        samma beständiga /data och att en uppgradering inte ersätter befintlig D1-data.
+        Lokal drift ska använda den lokala DB-konfigurationen utan Cloudflare-konto.
+        Vid ändrad inställningsimport, kontrollera att NAME=value behandlas som data,
+        att senare importvärden vinner, att tomma importvärden tar bort sparade värden
+        och att icke-tomma miljövariabler har företräde.
+        Kontrollera privata filbehörigheter för sparade inställningar och env-filen
+        med ADMIN_TOKEN och TURNSTILE_SECRET. Hemligheter får inte byggas in i imagen.
+
+    - path: ".github/workflows/{release,docker}.yml"
+      instructions: |
+        Vid ändrad releasekedja, kontrollera kopplingen mellan package.json-version,
+        v-taggen, CHANGELOG.md och Docker-taggarna X.Y.Z, X.Y, X och latest.
+        Kontrollera att Docker-publicering fortfarande startar efter en skapad
+        release och kan köras separat för återhämtning när taggen redan finns.
+        Vid ändrade omförsök eller samtidighetsgrupper, kontrollera att en äldre
+        release inte oavsiktligt skriver över en nyare latest- eller major/minor-tagg.
