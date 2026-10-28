@@ -102,6 +102,7 @@ GraphQL är avstängt, så `gh pr` och `gh issue` fungerar inte. Använd REST:
 - Svara i tråd: `gh api repos/pissmyran/klarsprak/pulls/<n>/comments/<id>/replies -f body='…'`
 - Lös tråd: `gh api -X POST repos/pissmyran/klarsprak/pulls/<n>/ccr/comments/<id>/resolve`
 - Kontroller: `gh api repos/pissmyran/klarsprak/commits/<sha>/check-runs`
-- Auto-merge på: `gh api -X PUT repos/pissmyran/klarsprak/pulls/<n>/ccr/auto_merge`
+- Auto-merge på: `gh api -X PUT repos/pissmyran/klarsprak/pulls/<n>/ccr/auto_merge -f merge_method=squash`
+- Är PR:en redan klar att mergas (auto-merge vägras då), squash-merga direkt: `gh api -X PUT repos/pissmyran/klarsprak/pulls/<n>/merge -f merge_method=squash`
 - Stäng PR: `gh api -X PATCH repos/pissmyran/klarsprak/pulls/<n> -f state=closed`
-- Radera gren: `gh api -X DELETE repos/pissmyran/klarsprak/git/refs/heads/<gren>`
+- Radera gren: GitHub raderar grenen vid merge. En stängd PR:s gren raderas med `git push origin --delete <gren>` (API-vägen är spärrad).
