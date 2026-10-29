@@ -16,7 +16,8 @@ reviews:
         but no key does. When rate limiting changes, review the time format,
         time windows and concurrent submissions; do not assume that a separate COUNT and INSERT
         give an atomic limit.
-        When publishing changes, check that submissions stay a review queue
+        When publishing changes, check that every submission stays unpublished
+        in the review queue until an administrator has reviewed and approved it,
         and that /api/terms only returns published published_terms without internal
         notes or submitter data. Check required source fields,
         length limits and http/https for source URLs.
