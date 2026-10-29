@@ -2,7 +2,13 @@
 
 Vägledning för Claude Code i `pissmyran/klarsprak`. Tjänsten klarsprak: en sajt som jämför vardagssvenska med juridiskt och myndighetsspråk, plus en Docker-bild för egen drift.
 
-De gemensamma reglerna för alla repon finns i [GOVERNANCE.md](https://github.com/pissmyran/.github/blob/main/GOVERNANCE.md) i `pissmyran/.github`. Kärnreglerna nedan är en ordagrann kopia på engelska. Jämför versionen i markeringen med källan i början av varje session (`curl -sS https://raw.githubusercontent.com/pissmyran/.github/main/GOVERNANCE.md`); är kopian äldre, uppdatera den först i en egen PR (`docs: sync core rules from .github`).
+De gemensamma reglerna för alla repon finns i [GOVERNANCE.md](https://github.com/pissmyran/.github/blob/main/GOVERNANCE.md) i `pissmyran/.github`. Kärnreglerna nedan är en ordagrann kopia. Jämför i början av varje session versionen i markeringen med källan:
+
+```sh
+curl -fsS https://raw.githubusercontent.com/pissmyran/.github/main/GOVERNANCE.md
+```
+
+Är kopian äldre, uppdatera den först i en egen PR (`docs: sync core rules from .github`).
 
 ## Kärnregler
 
@@ -102,18 +108,72 @@ Kör också, för det du har ändrat: `npx --yes prettier@latest --check .` (ins
 - **Local changes:** `optimize.sh` differs from the skill's original in two places: it never writes command text to the log, and it replaces control characters and caps field length in `log_line`. The hook command starts from `$CLAUDE_PROJECT_DIR`. Reapply these if the script is updated from the skill.
 - **Changing it:** switch `mode` to `redirect` only after `.token-optimizer/probe/run-probe.sh` has verified delegation. Set `enabled: false` to turn it off.
 
-## GitHub från sessionen
+## GitHub från sandlådan
 
-GraphQL är avstängt, så `gh pr` och `gh issue` fungerar inte. Använd REST:
+Sandlådan lägger in agentens fine-grained token för `github.com` och `api.github.com`, så `git` och `gh` fungerar som vanligt. Token når bara den här agentens repon.
 
-- Öppna PR: `gh api repos/pissmyran/klarsprak/pulls -f base=main -f head=<gren> -f title='…' -f body='…'`
-- PR från gren: `gh api 'repos/pissmyran/klarsprak/pulls?head=pissmyran:<gren>&state=open'`
-- Issue: `gh api repos/pissmyran/klarsprak/issues/<n>` och `…/issues/<n>/comments`
-- Granskningstrådar: `gh api repos/pissmyran/klarsprak/pulls/<n>/ccr/review_threads`
-- Svara i tråd: `gh api repos/pissmyran/klarsprak/pulls/<n>/comments/<id>/replies -f body='…'`
-- Lös tråd: `gh api -X POST repos/pissmyran/klarsprak/pulls/<n>/ccr/comments/<id>/resolve`
-- Kontroller: `gh api repos/pissmyran/klarsprak/commits/<sha>/check-runs`
-- Auto-merge på: `gh api -X PUT repos/pissmyran/klarsprak/pulls/<n>/ccr/auto_merge -f merge_method=squash`
-- Är PR:en redan klar att mergas (auto-merge vägras då), squash-merga direkt: `gh api -X PUT repos/pissmyran/klarsprak/pulls/<n>/merge -f merge_method=squash`
-- Stäng PR: `gh api -X PATCH repos/pissmyran/klarsprak/pulls/<n> -f state=closed`
-- Radera gren: GitHub raderar grenen vid merge. En stängd PR:s gren raderas med `git push origin --delete <gren>` (API-vägen är spärrad).
+Öppna en PR:
+
+```sh
+gh pr create --base main --title '<title>' --body '<body>'
+```
+
+Visa kontrollerna på en PR:
+
+```sh
+gh pr checks <n>
+```
+
+Lista granskningskommentarerna på rader (varje `id` används för svar):
+
+```sh
+gh api repos/pissmyran/klarsprak/pulls/<n>/comments
+```
+
+Svara på en granskningskommentar:
+
+```sh
+gh api repos/pissmyran/klarsprak/pulls/<n>/comments/<id>/replies -f body='<reply>'
+```
+
+Lista granskningstrådarna med nod-id (`id`) och första kommentaren:
+
+```sh
+gh api graphql -f query='query { repository(owner: "pissmyran", name: "klarsprak") { pullRequest(number: <n>) { reviewThreads(first: 100) { nodes { id isResolved comments(first: 1) { nodes { databaseId body } } } } } } }'
+```
+
+Lös en granskningstråd med trådens nod-id, inte kommentarens id:
+
+```sh
+gh api graphql -f query='mutation($id: ID!) { resolveReviewThread(input: {threadId: $id}) { thread { isResolved } } }' -f id='<thread-id>'
+```
+
+Slå på auto-merge och radera grenen efter merge:
+
+```sh
+gh pr merge <n> --auto --squash --delete-branch
+```
+
+Stäng en PR och radera dess gren:
+
+```sh
+gh pr close <n> --delete-branch
+```
+
+Lista Dependabot-larm:
+
+```sh
+gh api repos/pissmyran/klarsprak/dependabot/alerts
+```
+
+Lista kodskanningslarm:
+
+```sh
+gh api repos/pissmyran/klarsprak/code-scanning/alerts
+```
+
+Lista larm från hemlighetsskanning:
+
+```sh
+gh api repos/pissmyran/klarsprak/secret-scanning/alerts
+```
