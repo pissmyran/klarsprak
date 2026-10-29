@@ -6,105 +6,105 @@ reviews:
   path_instructions:
     - path: "src/worker.js"
       instructions: |
-        Vid ändringar i adminhanterare, kontrollera att varje läsning och
-        mutation kräver giltig Bearer-token och nekar åtkomst när ADMIN_TOKEN saknas.
-        Vid ändringar i inskick, kontrollera att Turnstile verifieras på servern
-        med success, action term_submit och tillåtet hostname före databasinsättning.
-        Nätverksfel eller saknad Turnstile-konfiguration får inte godkänna inskick.
-        Kontrollera att submitter_ip endast får en HMAC-identitet, aldrig rå IP.
-        Bevara RATE_LIMIT_KEY med ADMIN_TOKEN som reserv och felsvaret när IP finns
-        men nyckel saknas. Vid ändrad frekvensbegränsning, granska tidsformat,
-        tidsfönster och samtidiga inskick; anta inte att separat COUNT och INSERT
-        ger en atomisk gräns.
-        Vid ändringar i publicering, kontrollera att submissions förblir granskningskö
-        och att /api/terms endast lämnar publicerade published_terms utan interna
-        anteckningar eller inskickaruppgifter. Kontrollera obligatoriska källfält,
-        längdgränser och http/https för källadresser.
-        Kontrollera att godkännande och publicering lyckas eller återställs tillsammans.
-        Granska samtidiga approve/reject och upprepade anrop mot pending-villkor,
-        unika index och antal ändrade rader, inte bara en föregående SELECT.
-        Vid ändrade D1-routes, kontrollera sessionsvalet: adminläsningar och mutationer
-        börjar på first-primary; publik termläsning använder first-unconstrained.
+        When admin handlers change, check that every read and
+        mutation requires a valid Bearer token and denies access when ADMIN_TOKEN is missing.
+        When submission changes, check that Turnstile is verified on the server
+        with success, action term_submit and an allowed hostname before the database insert.
+        Network errors or a missing Turnstile configuration must never accept a submission.
+        Check that submitter_ip only gets an HMAC identity, never the raw IP.
+        Keep RATE_LIMIT_KEY with ADMIN_TOKEN as fallback, and the error response when an IP exists
+        but no key does. When rate limiting changes, review the time format,
+        time windows and concurrent submissions; do not assume that a separate COUNT and INSERT
+        give an atomic limit.
+        When publishing changes, check that submissions stay a review queue
+        and that /api/terms only returns published published_terms without internal
+        notes or submitter data. Check required source fields,
+        length limits and http/https for source URLs.
+        Check that approval and publishing succeed or roll back together.
+        Review concurrent approve/reject and repeated calls against pending conditions,
+        unique indexes and the number of changed rows, not just a preceding SELECT.
+        When D1 routes change, check the session choice: admin reads and mutations
+        start on first-primary; public term reads use first-unconstrained.
 
     - path: "{src/index.js,src/response-policy.js,wrangler.jsonc}"
       instructions: |
-        Vid ändrad routing eller Assets-konfiguration, kontrollera att Workern
-        körs före statiska filer. /admin ska nå Assets utan omskrivning till
-        /admin.html. /admin/api/ skrivs om internt till /api/admin/ och direkta
-        interna anrop omdirigeras till den publika adminvägen.
-        Kontrollera att omskrivningar bevarar metod, body, query och Authorization.
-        Vid ändrade svar, kontrollera no-store på adminvägar även för fel och
-        omdirigeringar samt att publika svar behåller sin avsedda cachepolicy.
-        Vid ändrad CSP eller HTML-omskrivning, kontrollera att dokumentationens
-        inline-skript får samma nonce som svarets CSP och att Turnstile fortfarande
-        tillåts utan att script-src öppnas med unsafe-inline.
-        Vid ändrade värdnamn, kontrollera att IDN-alias jämförs som punycode och
-        omdirigeras till PUBLIC_HOST med bevarad sökväg och query.
+        When routing or the Assets configuration changes, check that the Worker
+        runs before static files. /admin must reach Assets without a rewrite to
+        /admin.html. /admin/api/ is rewritten internally to /api/admin/, and direct
+        internal calls are redirected to the public admin path.
+        Check that rewrites keep the method, body, query and Authorization.
+        When responses change, check no-store on admin paths, also for errors and
+        redirects, and that public responses keep their intended cache policy.
+        When the CSP or HTML rewriting changes, check that the documentation's
+        inline scripts get the same nonce as the response's CSP and that Turnstile is still
+        allowed without opening script-src with unsafe-inline.
+        When host names change, check that IDN aliases are compared as punycode and
+        redirected to PUBLIC_HOST with the path and query kept.
 
     - path: "public/{app,admin}.js"
       instructions: |
-        Vid ändrad rendering av API-data, kontrollera escaping i HTML-text,
-        attribut och textarea samt att källänkarnas protokoll valideras i serverflödet.
-        Vid ändrade adminanrop, kontrollera /admin/api/-vägarna och Bearer-headern.
-        Token får inte hamna i URL, loggar eller publikt renderat innehåll.
-        Vid ändrat förslagsformulär, kontrollera mappningen från cf-turnstile-response
-        till turnstileToken och att klienten inte visar publicering som lyckad
-        innan serverns granskningsflöde har godkänt posten.
+        When rendering of API data changes, check escaping in HTML text,
+        attributes and textarea, and that source link protocols are validated in the server flow.
+        When admin calls change, check the /admin/api/ paths and the Bearer header.
+        The token must never end up in a URL, logs or publicly rendered content.
+        When the suggestion form changes, check the mapping from cf-turnstile-response
+        to turnstileToken and that the client never shows publishing as successful
+        before the server's review flow has approved the entry.
 
     - path: "public/{service-worker,pwa}.js"
       instructions: |
-        Vid ändrad service worker eller dess scope, kontrollera att admininnehåll,
-        tokenbärande anrop och mutationer inte lagras eller spelas upp.
-        Nuvarande service worker är network-only. Om cache införs, kontrollera
-        uttryckligen vilka publika data som får lagras, hur de blir aktuella efter
-        arkivering och att no-store inte kringgås.
-        Kontrollera att registrering endast sker i en säker kontext.
+        When the service worker or its scope changes, check that admin content,
+        token-carrying calls and mutations are never stored or replayed.
+        The current service worker is network-only. If a cache is introduced, check
+        explicitly which public data may be stored, how it becomes current after
+        archiving and that no-store is not bypassed.
+        Check that registration only happens in a secure context.
 
     - path: "migrations/*.sql"
       instructions: |
-        Vid schemaändringar, kontrollera D1/SQLite-kompatibilitet och uppgradering
-        med befintliga submissions och published_terms. Bevara unik submission_id,
-        unik LOWER(TRIM(term)), statusvillkor och berörda runtime-frågor.
-        Kontrollera migreringsordning och dataförlust vid tabell- eller kolumnändringar.
-        Containerstart tillämpar migreringar före serverstart; anta inte motsatt ordning.
-        Vid dataändringar, kontrollera att seed, återköning och arkivering inte
-        återpublicerar tidigare arkiverade poster eller raderar granskningshistorik.
-        Kontrollera att nya eller ändrade publiceringsposter har separata språkliga
-        och institutionella källor som stöder den påstådda betydelseskillnaden.
-        Bevara saneringen av historiska råa submitter_ip-värden.
+        On schema changes, check D1/SQLite compatibility and upgrading
+        with existing submissions and published_terms. Keep the unique submission_id,
+        unique LOWER(TRIM(term)), status conditions and affected runtime queries.
+        Check the migration order and data loss on table or column changes.
+        Container start applies migrations before server start; do not assume the opposite order.
+        On data changes, check that seeding, requeuing and archiving never
+        republish previously archived entries or delete review history.
+        Check that new or changed published entries have separate linguistic
+        and institutional sources that support the claimed difference in meaning.
+        Keep the cleanup of historical raw submitter_ip values.
 
     - path: "{tools/render.mjs,cloudflare.example.env}"
       instructions: |
-        Vid ändrade platshållare, kontrollera att de deklareras i cloudflare.example.env
-        och ersätts i avsedda runtimefiler. Saknade värden ska ge fel; avsiktligt
-        tomma värden ska fungera, inklusive borttagning av tom alias-route.
-        Vid ändrad kopiering, overlay eller substitution, kontrollera att utdata
-        inte kan radera källträdet, kopieras rekursivt till sig själv eller följa
-        länkar till privata filer vid skrivning.
-        Kontrollera att privata värdefiler och Worker-hemligheter inte följer med
-        till public, image, publicerade artefakter eller loggar.
+        When placeholders change, check that they are declared in cloudflare.example.env
+        and replaced in the intended runtime files. Missing values must fail; intentionally
+        empty values must work, including removal of an empty alias route.
+        When copying, overlay or substitution changes, check that the output
+        can never delete the source tree, be copied recursively into itself or follow
+        links to private files when writing.
+        Check that private value files and Worker secrets never end up
+        in public, the image, published artifacts or logs.
 
     - path: "{Dockerfile,docker-compose.yml,package.json,bun.lock,docker/entrypoint.sh,docker/import-settings.sh,docker/wrangler.jsonc}"
       instructions: |
-        Vid ändrad runtime eller beroenden, kontrollera Node, Wrangler och workerd
-        tillsammans med kommandona i docker/entrypoint.sh. Docker installerar med
-        npm från package.json, inte från bun.lock; anta inte att låsfilen styr imagen.
-        Kontrollera att src, public, migrations, renderaren och containerkonfigurationen
-        finns i imagen, att processen körs som icke-root och att /data och /srv är skrivbara.
-        Vid ändrad start eller lagring, kontrollera att migrering och server använder
-        samma beständiga /data och att en uppgradering inte ersätter befintlig D1-data.
-        Lokal drift ska använda den lokala DB-konfigurationen utan Cloudflare-konto.
-        Vid ändrad inställningsimport, kontrollera att NAME=value behandlas som data,
-        att senare importvärden vinner, att tomma importvärden tar bort sparade värden
-        och att icke-tomma miljövariabler har företräde.
-        Kontrollera privata filbehörigheter för sparade inställningar och env-filen
-        med ADMIN_TOKEN och TURNSTILE_SECRET. Hemligheter får inte byggas in i imagen.
+        When the runtime or dependencies change, check Node, Wrangler and workerd
+        together with the commands in docker/entrypoint.sh. Docker installs with
+        npm from package.json, not from bun.lock; do not assume the lockfile controls the image.
+        Check that src, public, migrations, the renderer and the container configuration
+        are in the image, that the process runs as non-root and that /data and /srv are writable.
+        When start or storage changes, check that migration and server use
+        the same persistent /data and that an upgrade never replaces existing D1 data.
+        Local use must use the local DB configuration without a Cloudflare account.
+        When settings import changes, check that NAME=value is treated as data,
+        that later import values win, that empty import values remove saved values
+        and that non-empty environment variables take precedence.
+        Check private file permissions for saved settings and the env file
+        with ADMIN_TOKEN and TURNSTILE_SECRET. Secrets must never be built into the image.
 
     - path: ".github/workflows/{release,docker}.yml"
       instructions: |
-        Vid ändrad releasekedja, kontrollera kopplingen mellan package.json-version,
-        v-taggen, CHANGELOG.md och Docker-taggarna X.Y.Z, X.Y, X och latest.
-        Kontrollera att Docker-publicering fortfarande startar efter en skapad
-        release och kan köras separat för återhämtning när taggen redan finns.
-        Vid ändrade omförsök eller samtidighetsgrupper, kontrollera att en äldre
-        release inte oavsiktligt skriver över en nyare latest- eller major/minor-tagg.
+        When the release chain changes, check the link between the package.json version,
+        the v tag, CHANGELOG.md and the Docker tags X.Y.Z, X.Y, X and latest.
+        Check that Docker publishing still starts after a release is created
+        and can run separately for recovery when the tag already exists.
+        When retries or concurrency groups change, check that an older
+        release never accidentally overwrites a newer latest or major/minor tag.
