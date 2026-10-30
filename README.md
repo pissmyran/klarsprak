@@ -58,6 +58,8 @@ Taggen `1` ger alla uppdateringar inom version 1; `X.Y` ger bara rättningar och
 
 ## Bidra
 
+CodeRabbit ärver gemensamma granskningsinställningar från `pissmyran/coderabbit`. Repots `.coderabbit.yaml` kompletterar dem med säkerhets-, test- och dokumentationskontroller samt länkar till relaterade tjänsterepon. Se [Drift](docs/operations.md#coderabbit) för verifiering.
+
 Frågor och idéer tas i [Discussions](https://github.com/pissmyran/.github/discussions), fel och förslag som issues här. Läs [CONTRIBUTING.md](https://github.com/pissmyran/.github/blob/main/CONTRIBUTING.md) innan du öppnar en pull request. Säkerhetsproblem rapporteras privat via fliken Security.
 
 ## Licens

@@ -22,3 +22,7 @@ Båda krävs före push.
 - **Dokumentationen** publiceras också under `/docs` av appens egen Worker: Workers Builds kör `node tools/render.mjs - build && (sh tools/docs-cloudflare.sh build/public || echo "docs skipped")`, och Workern ger sajtens inline-skript CSP-noncen (`isDocsPath` i `src/index.js`).
 - **Release:** versionen finns i `package.json`.
 - **Extra noggrant:** inskick och Turnstile, admin-token, CSP och migreringar.
+
+## CodeRabbit
+
+`.coderabbit.yaml` ärver `pissmyran/coderabbit` och innehåller repots riskområden, testvägledning, svensk/engelsk dokumentationsmappning och länkar till relaterade tjänsterepon. Verifiera den upplösta konfigurationen och åtkomsten till länkade repon enligt [docs/operations.md](docs/operations.md#coderabbit).

@@ -1,111 +1,160 @@
 # yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
 
+# Inherit shared settings from pissmyran/coderabbit.
+# Keep only repository-specific guidance here.
 inheritance: true
 
 reviews:
   path_instructions:
     - path: "src/worker.js"
       instructions: |
-        When admin handlers change, check that every read and
-        mutation requires a valid Bearer token and denies access when ADMIN_TOKEN is missing.
-        When submission changes, check that Turnstile is verified on the server
-        with success, action term_submit and an allowed hostname before the database insert.
-        Network errors or a missing Turnstile configuration must never accept a submission.
-        Check that submitter_ip only gets an HMAC identity, never the raw IP.
-        Keep RATE_LIMIT_KEY with ADMIN_TOKEN as fallback, and the error response when an IP exists
-        but no key does. When rate limiting changes, review the time format,
-        time windows and concurrent submissions; do not assume that a separate COUNT and INSERT
-        give an atomic limit.
-        When publishing changes, check that every submission stays unpublished
-        in the review queue until an administrator has reviewed and approved it,
-        and that /api/terms only returns published published_terms without internal
-        notes or submitter data. Check required source fields,
-        length limits and http/https for source URLs.
-        Check that approval and publishing succeed or roll back together.
-        Review concurrent approve/reject and repeated calls against pending conditions,
-        unique indexes and the number of changed rows, not just a preceding SELECT.
-        When D1 routes change, check the session choice: admin reads and mutations
-        start on first-primary; public term reads use first-unconstrained.
+        When admin handlers change, verify that every read and mutation
+        requires a valid Bearer token and fails closed without ADMIN_TOKEN.
+        When submission changes, verify server-side Turnstile success,
+        action term_submit and an allowed hostname before database insertion.
+        Network errors or missing Turnstile configuration must reject submission.
+        Store only an HMAC identity in submitter_ip, never the raw IP.
+        Preserve RATE_LIMIT_KEY with ADMIN_TOKEN as fallback. If an IP exists
+        without either key, return an error.
+        Review rate-limit timestamps, windows and concurrent submissions.
+        A separate COUNT and INSERT does not establish an atomic limit.
+        Keep submissions unpublished until administrator review and approval.
+        Public /api/terms responses must contain only published published_terms,
+        without internal notes or submitter data.
+        Check required source fields, length limits and HTTP/HTTPS source URLs.
+        Approval and publishing must succeed or roll back together.
+        Review concurrent and repeated approve/reject calls against pending
+        conditions, unique indexes and changed-row counts, not only a SELECT.
+        Admin D1 reads and mutations start on first-primary.
+        Public term reads use first-unconstrained.
 
     - path: "{src/index.js,src/response-policy.js,wrangler.jsonc}"
       instructions: |
-        When routing or the Assets configuration changes, check that the Worker
-        runs before static files. /admin must reach Assets without a rewrite to
-        /admin.html. /admin/api/ is rewritten internally to /api/admin/, and direct
-        internal calls are redirected to the public admin path.
-        Check that rewrites keep the method, body, query and Authorization.
-        When responses change, check no-store on admin paths, also for errors and
-        redirects, and that public responses keep their intended cache policy.
-        When the CSP or HTML rewriting changes, check that the documentation's
-        inline scripts get the same nonce as the response's CSP and that Turnstile is still
-        allowed without opening script-src with unsafe-inline.
-        When host names change, check that IDN aliases are compared as punycode and
-        redirected to PUBLIC_HOST with the path and query kept.
+        When routing or Assets configuration changes, preserve Worker-first
+        handling. Pass /admin to Assets without rewriting it to /admin.html.
+        Rewrite /admin/api/ internally to /api/admin/. Redirect direct internal
+        calls to the public admin path.
+        Preserve the method, body, query and Authorization through rewrites.
+        Apply no-store to admin responses, including errors and redirects.
+        Preserve the intended cache policy for public responses.
+        When CSP or HTML rewriting changes, give documentation inline scripts
+        the same nonce as the response CSP. Keep Turnstile working without
+        adding unsafe-inline to script-src.
+        Compare IDN aliases as punycode. Redirect aliases to PUBLIC_HOST
+        while preserving the path and query.
 
     - path: "public/{app,admin}.js"
       instructions: |
-        When rendering of API data changes, check escaping in HTML text,
-        attributes and textarea, and that source link protocols are validated in the server flow.
-        When admin calls change, check the /admin/api/ paths and the Bearer header.
-        The token must never end up in a URL, logs or publicly rendered content.
-        When the suggestion form changes, check the mapping from cf-turnstile-response
-        to turnstileToken and that the client never shows publishing as successful
-        before the server's review flow has approved the entry.
+        When API rendering changes, check escaping in HTML text, attributes
+        and textarea content. Verify server-side source URL protocol checks.
+        Admin calls use /admin/api/ and the Bearer header.
+        Never place the token in URLs, logs or publicly rendered content.
+        When the suggestion form changes, preserve the mapping from
+        cf-turnstile-response to turnstileToken.
+        Do not report a submitted suggestion as published before administrator
+        review and approval.
 
     - path: "public/{service-worker,pwa}.js"
       instructions: |
-        When the service worker or its scope changes, check that admin content,
-        token-carrying calls and mutations are never stored or replayed.
-        The current service worker is network-only. If a cache is introduced, check
-        explicitly which public data may be stored, how it becomes current after
-        archiving and that no-store is not bypassed.
-        Check that registration only happens in a secure context.
+        Never store or replay admin content, token-carrying calls or mutations.
+        The service worker is network-only. If caching is introduced, review
+        which public data may be stored and how archiving invalidates it.
+        Do not bypass no-store.
+        Register the service worker only in a secure context.
 
     - path: "migrations/*.sql"
       instructions: |
-        On schema changes, check D1/SQLite compatibility and upgrading
-        with existing submissions and published_terms. Keep the unique submission_id,
-        unique LOWER(TRIM(term)), status conditions and affected runtime queries.
-        Check the migration order and data loss on table or column changes.
-        Container start applies migrations before server start; do not assume the opposite order.
-        On data changes, check that seeding, requeuing and archiving never
-        republish previously archived entries or delete review history.
-        Check that new or changed published entries have separate linguistic
-        and institutional sources that support the claimed difference in meaning.
-        Keep the cleanup of historical raw submitter_ip values.
+        Check D1/SQLite compatibility and upgrades with existing submissions
+        and published_terms. Preserve unique submission_id, unique
+        LOWER(TRIM(term)), status conditions and affected runtime queries.
+        Add a new migration instead of editing one that has already run.
+        Check migration order and data loss for table or column changes.
+        Container startup applies migrations before starting the server.
+        For production, apply additive migrations before the new Worker and
+        destructive migrations after the compatible Worker is deployed.
+        Seeding, requeuing and archiving must not republish archived entries
+        or delete review history.
+        New or changed published entries need separate linguistic and
+        institutional sources that support the claimed meaning difference.
+        Preserve cleanup of historical raw submitter_ip values.
 
     - path: "{tools/render.mjs,cloudflare.example.env}"
       instructions: |
-        When placeholders change, check that they are declared in cloudflare.example.env
-        and replaced in the intended runtime files. Missing values must fail; intentionally
-        empty values must work, including removal of an empty alias route.
-        When copying, overlay or substitution changes, check that the output
-        can never delete the source tree, be copied recursively into itself or follow
-        links to private files when writing.
-        Check that private value files and Worker secrets never end up
-        in public, the image, published artifacts or logs.
+        Declare every placeholder in cloudflare.example.env and replace it in
+        the intended runtime files. Missing values must fail.
+        Intentionally empty values must work, including empty alias removal.
+        Copying, overlays and substitution must not delete the source tree,
+        copy output recursively into itself or follow links to private files.
+        Keep private value files and Worker secrets out of public files,
+        container images, published artifacts and logs.
 
     - path: "{Dockerfile,docker-compose.yml,package.json,bun.lock,docker/entrypoint.sh,docker/import-settings.sh,docker/wrangler.jsonc}"
       instructions: |
-        When the runtime or dependencies change, check Node, Wrangler and workerd
-        together with the commands in docker/entrypoint.sh. Docker installs with
-        npm from package.json, not from bun.lock; do not assume the lockfile controls the image.
-        Check that src, public, migrations, the renderer and the container configuration
-        are in the image, that the process runs as non-root and that /data and /srv are writable.
-        When start or storage changes, check that migration and server use
-        the same persistent /data and that an upgrade never replaces existing D1 data.
-        Local use must use the local DB configuration without a Cloudflare account.
-        When settings import changes, check that NAME=value is treated as data,
-        that later import values win, that empty import values remove saved values
-        and that non-empty environment variables take precedence.
-        Check private file permissions for saved settings and the env file
-        with ADMIN_TOKEN and TURNSTILE_SECRET. Secrets must never be built into the image.
+        Check Node, Wrangler and workerd compatibility with entrypoint commands.
+        Docker installs with npm from package.json, not bun.lock.
+        Do not assume bun.lock controls dependencies in the image.
+        Include src, public, migrations, the renderer and container configuration.
+        Run as non-root with writable /data and /srv.
+        Migrations and the server must use the same persistent /data.
+        Upgrades must not replace existing D1 data.
+        Local operation must use the local database without a Cloudflare account.
+        Treat imported NAME=value settings as data, not shell commands.
+        Later import values win. Empty import values remove saved values.
+        Non-empty environment variables take precedence.
+        Check private permissions for saved settings and environment files
+        containing ADMIN_TOKEN or TURNSTILE_SECRET.
+        Never build secrets into the image.
 
     - path: ".github/workflows/{release,docker}.yml"
       instructions: |
-        When the release chain changes, check the link between the package.json version,
-        the v tag, CHANGELOG.md and the Docker tags X.Y.Z, X.Y, X and latest.
-        Check that Docker publishing still starts after a release is created
-        and can run separately for recovery when the tag already exists.
-        When retries or concurrency groups change, check that an older
-        release never accidentally overwrites a newer latest or major/minor tag.
+        Review only; these workflows are owner-managed.
+        Check consistency between package.json, the v tag, CHANGELOG.md and
+        Docker tags X.Y.Z, X.Y, X and latest.
+        Preserve Docker publishing after release creation and separate recovery
+        when a tag already exists.
+        Review retries and concurrency so an older release cannot overwrite
+        a newer latest or major/minor tag.
+
+    - path: "test/**/*.test.js"
+      instructions: |
+        Use the existing Node.js test runner and exercise real behavior.
+        For changed security or routing behavior, check relevant rejection
+        paths as well as successful requests.
+        Review coverage for admin authorization, Turnstile failures, HMAC
+        identity, D1 session selection, redirects and response cache policy.
+        Do not require unrelated tests or assertions tied to source formatting.
+        Tests use unrendered source and must tolerate declared placeholders.
+
+    - path: "{README.md,docker/README.md,docs/**,zensical.toml}"
+      instructions: |
+        This repository uses Swedish documentation with an English mirror
+        under docs/eng/.
+        When a page changes, update its translated counterpart in the same PR:
+        README.md maps to docs/eng/index.md, docker/README.md maps to
+        docs/eng/docker.md, and other documentation pages retain their names.
+        Add new pages to both language sections in zensical.toml.
+        Check that deployment and migration instructions distinguish production
+        Workers Builds from local Docker startup.
+        Preserve documentation delivery under /docs through the app Worker
+        and the CSP nonce handling for documentation inline scripts.
+
+knowledge_base:
+  linked_repositories:
+    - repository: "pissmyran/dumpen"
+      instructions: |
+        Related service repository. When shared rendering, placeholders,
+        Docker settings import or documentation tooling changes, compare
+        the relevant implementation for compatibility. Report concrete
+        cross-repository impact, not assumed differences.
+    - repository: "pissmyran/jobb"
+      instructions: |
+        Related service repository. When shared rendering, placeholders,
+        Docker settings import or documentation tooling changes, compare
+        the relevant implementation for compatibility. Report concrete
+        cross-repository impact, not assumed differences.
+    - repository: "pissmyran/politiker"
+      instructions: |
+        Related service repository. When shared rendering, placeholders,
+        Docker settings import or documentation tooling changes, compare
+        the relevant implementation for compatibility. Report concrete
+        cross-repository impact, not assumed differences.
