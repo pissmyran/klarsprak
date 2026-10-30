@@ -58,6 +58,8 @@ The tag `1` gives every update within version 1; `X.Y` gives only fixes and `X.Y
 
 ## Contributing
 
+CodeRabbit inherits shared review settings from `pissmyran/coderabbit`. The repository’s `.coderabbit.yaml` adds security, test and documentation guidance and links to related service repositories. See [Operations](operations.md#coderabbit) for verification.
+
 Questions and ideas go to [Discussions](https://github.com/pissmyran/.github/discussions), bugs and suggestions as issues here. Read [CONTRIBUTING.md](https://github.com/pissmyran/.github/blob/main/CONTRIBUTING.md) before opening a pull request. Report security problems privately through the Security tab.
 
 ## License

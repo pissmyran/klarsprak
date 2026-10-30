@@ -65,3 +65,11 @@ Kontrollera också:
 **Admin fungerar inte:** kontrollera `ADMIN_TOKEN` och, om du använder den, Access-applikationen för `/admin` innan du ändrar någon data. Gör aldrig admin-API:t mer publikt för att lösa ett åtkomstproblem.
 
 Frågesträngarna maskeras i loggarna även vid felsökning; lägg aldrig känsliga parametrar i loggar.
+
+## CodeRabbit
+
+`.coderabbit.yaml` använder `inheritance: true` för att ärva `pissmyran/coderabbit`. Lokala granskningsinstruktioner kompletterar de centrala. Listor slås ihop per nyckel: samma `path` ersätter motsvarande central instruktion, medan unika centrala sökvägar behålls. Lokala inställningar ändrar inte skannrar, rådgivande förhandskontroller, godkännanden eller fakturering.
+
+Efter en konfigurationsändring, skriv `@coderabbitai configuration` i en egen PR-kommentar. Kontrollera i svaret att centrala instruktioner, skannrar och rådgivande förhandskontroller finns kvar. YAML-validering visar inte den effektiva konfigurationen från alla nivåer.
+
+Länkarna till `pissmyran/dumpen`, `pissmyran/jobb` och `pissmyran/politiker` ger granskningskontext när ändringen berör gemensamma verktyg. Kontrollera åtkomst genom CodeRabbits PR-granskning: läs granskningssammanfattningens varningar om otillgängliga repon eller plangränser och eventuell kontext under Review details. Om åtkomsten inte bekräftas är verifieringen ofullständig; frånvaro av fynd bevisar inte åtkomst. Konfigurationen ger inga abonnemangsrättigheter. Aktivera inte betalning eller betalfunktioner för att verifiera länkarna.

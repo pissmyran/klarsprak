@@ -65,3 +65,11 @@ Also check:
 **Admin does not work:** check `ADMIN_TOKEN` and, if you use it, the Access application for `/admin` before changing any data. Never make the admin API more public to solve an access problem.
 
 Query strings are masked in the logs even while troubleshooting; never put sensitive parameters in logs.
+
+## CodeRabbit
+
+`.coderabbit.yaml` uses `inheritance: true` to inherit `pissmyran/coderabbit`. Local review instructions supplement the central ones. Lists merge by key: an identical `path` replaces the corresponding central instruction, while unique central paths remain. Local settings do not change scanners, advisory pre-merge checks, approvals or billing.
+
+After a configuration change, post `@coderabbitai configuration` in a separate PR comment. Check the response for retained central instructions, scanners and advisory pre-merge checks. YAML validation does not show the effective configuration from every level.
+
+Links to `pissmyran/dumpen`, `pissmyran/jobb` and `pissmyran/politiker` provide review context when changes affect shared tooling. Verify access through CodeRabbit’s PR review: inspect review-summary warnings about inaccessible repositories or plan limits and any context under Review details. If access is not confirmed, verification remains incomplete; no findings does not prove access. Configuration does not grant plan entitlements. Do not enable billing or paid features to verify these links.
